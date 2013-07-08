@@ -1,5 +1,5 @@
-;------------------------------------------------------------------------------------------
-;Copyright (C) 2013  Juan A. A\~{\n}el, Guadalupe Sáenz, Laura de la Torre and Doug Allen.
+;--------------------------------------------------------------------------------------------------------------
+;Copyright (C) 2012  Juan Antonio Añel, Guadalupe Sáenz, Laura de la Torre and Doug Allen.
 ;
 ;    This program is free software: you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see
 ;    <http://www.gnu.org/licenses/>.
-;------------------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------------------
 ;
 ;NAME: eqlat_roi
 ;
 ;PURPOSE:
 ;
-;     This program calculates equivalent latitude using the concept of regions of interest
-;     (ROIs) for 2D field of Potential Vorticity (PV).
+;     This program calculates equivalent latitude using the concept of regions of interest (ROI) 
+;     for 2D field of Potential Vorticity (PV).
 ;
 ;CATEGORY:
 ;
@@ -48,19 +48,17 @@
 ; IDL> -26.505798
 ;
 ;AUTHORS AND MODIFICATIONS
-;     Last modified Novembre 30, 2012 Juan Antonio Añel, Guadalupe Sáenz,
-;     Laura de la Torre and Doug Allen.
+;     Last modified Novembre 30, 2012 Juan Antonio Anel, Guadalupe Saenz Laura de la Torre and Doug Allen.
 
-;Please report any bugs to:
-; Juan Añel (juan.anel@smithschool.ox.ac.uk) and Guadalupe Sáenz (lusaga81@gmail.com). 
-;*****************************************************************************************
+;Please report any bugs to Juan Anel (juan.anel@smithschool.ox.ac.uk) and Guadalupe Saenz (lusaga81@gmail.com). 
+;******************************************************************************************************************
 
-pro eqlat_roi,PV_theta,lon,lat,PV_fixed,equivalat
-
-;----------constant-----------------------------------------------------------------------
+pro eqlat_roi_f_allen,PV_theta,lon,lat,PV_fixed,equivalat,time_a
+timer,/start
+;----------constant---------------------------------------------------------------------------------------------------
 RT=6.37e3; Earth Radius (in meters)
 
-;------------Closed PV_theta field--------------------------------------------------------
+;------------Closed PV_theta field------------------------------------------------------------------------------------
 if (lon(n_elements(lon)-1) lt 180) then begin
    
    PV_theta11=fltarr(n_elements(lon)+1,n_elements(lat))
@@ -75,7 +73,7 @@ endif else begin
    lon1=lon
    lat11=lat
 endelse 
-;-----------Latitude (90,-90)-------------------------------------------------------------
+;-----------Latitude (90,-90)----------------------------------------------------------------------------------------
 PV_theta1=fltarr(n_elements(lon1),n_elements(lat11))
 if lat11(0) lt lat11(1) then begin
    lat1=reverse(lat11) 
@@ -86,27 +84,27 @@ endif else begin
    lat1=lat11
    PV_theta1=PV_theta11
 endelse
-;-----------------------Computation of contours---------------------------------------------------------------
+;-----------------------Computation of contours-------------------------------------------------------------------
 contour, PV_theta1,lon1,lat1,levels=PV_fixed,close=0,path_xy=xy,path_info=info,/path_data_coords,/path_double
-;-------------------Calculate areas of interes----------------------------------------------------------------
+;-------------------Calculate areas of interes--------------------------------------------------------------------
 totalarea=-9999.9
 if n_elements(info) eq 0 then goto,no ; there aren't contours
 totalarea=0.0
       for interesofarea=0,n_elements(info)-1 do begin ; there are contours
-;-------------------------------------------------------------------------------------------------------------
-;---------An isosurface of PV can show three different cases of computation of areas--------------------------
-               ;----------------------------------------------------------------------------------------------
+;------------------------------------------------------------------------------------------------------------------
+;---------An isosurface of PV can show three different cases of computation of areas-------------------------------
+               ;---------------------------------------------------------------------------------------------------
                ;Case 1// Closed areas.
                ;Case 2// Open areas which don't include pole.
                ;Case 3// Open areas which include pole.
-;-------------------------------------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------------------------------------------
  a=info(interesofarea).offset & b=info(interesofarea).offset+info(interesofarea).N-1
 
 ;Case 1// Closed areas
-;-------------------------------------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------------------------------------------
 ;In this case the contour is closed with one point (x_inicial=x_final and y_inicial=y_final) 
-;and the area enclosed is calculated with the function ROIs. 
-;-------------------------------------------------------------------------------------------------------------
+;and the area enclosed is calculated with the function ROI. 
+;-------------------------------------------------------------------------------------------------------------------
    if (info(interesofarea).type eq 1) then begin
 	x=fltarr(info(interesofarea).N+1) 
 	y=fltarr(info(interesofarea).N+1)
@@ -127,10 +125,10 @@ totalarea=0.0
         x(0:info(interesofarea).N-1)=xy(0,a:b)
         y(0:info(interesofarea).N-1)=xy(1,a:b)
 ;Case 2// Open contour which don't include pole
-;-------------------------------------------------------------------------------------------------------------
+;--------------------------------------------------------------------------------------------------------------------
 ;The contour is closed with one point (x_inicial=x_final and y_inicial=y_final) 
-;and the area enclosed is calculated with the function ROIs. 
-;-------------------------------------------------------------------------------------------------------------
+;and the area enclosed is calculated with the function ROI. 
+;--------------------------------------------------------------------------------------------------------------------
       if (x(0) eq x(n_elements(x)-1)) then begin
         xcl=fltarr(n_elements(x)+1) & ycl=fltarr(n_elements(y)+1) 
         xcl(0:n_elements(x)-1)=x    & ycl(0:n_elements(y)-1)=y
@@ -142,18 +140,17 @@ totalarea=0.0
    endif else begin
 
 ;Case 3// Open contour which include pole 
-;-------------------------------------------------------------------------------------------------------------
-;The contour is closed using a lot of points with high resolution of 0.1 degree the latitude until pole 
-;(North or South). 
-;Finally the enclosing area is calculated using funtion ROIs.
-;-------------------------------------------------------------------------------------------------------------
+;---------------------------------------------------------------------------------------------------------------------
+;The contour is closed using a lot of points with high resolution of 0.1 degrees of latitude to the pole (North or South). 
+;Finally the enclosing area is calculated using function ROI.
+;---------------------------------------------------------------------------------------------------------------------
         if PV_fixed ge 0 then begin 			
-	   beginningpoints=abs(1.0*floor(10.0*(89-(y(0)))))
-	   finalpoints=abs(1.0*floor(10.0*(89-y(n_elements(y)-1))))
+	   beginningpoints=abs(1.0*floor(10.0*(90-(y(0)))))
+	   finalpoints=abs(1.0*floor(10.0*(90-y(n_elements(y)-1))))
 	endif
 	if PV_fixed lt 0 then begin
-           beginningpoints=abs(1.0*floor(10.0*(-89-(y(0)))))
-           finalpoints=abs(1.0*floor(10.0*(-89-y(n_elements(y)-1))))
+           beginningpoints=abs(1.0*floor(10.0*(-90-(y(0)))))
+           finalpoints=abs(1.0*floor(10.0*(-90-y(n_elements(y)-1))))
         endif
         if beginningpoints eq 0 or beginningpoints eq 1 then beginningpoints=2
         if finalpoints eq 0 or finalpoints eq 1 then finalpoints=2
@@ -161,23 +158,21 @@ totalarea=0.0
         xclosed=fltarr(n_elements(x)+totalpoints+2) & yclosed=fltarr(n_elements(y)+totalpoints+2)
 	xclosed(0:beginningpoints-1)=x(0)
               if PV_fixed ge 0 then begin
-		yclosed(0)=89.
-		yclosed(1:beginningpoints-1)=89-indgen(beginningpoints-1)*0.1
+		yclosed(0)=90.
+		yclosed(1:beginningpoints-1)=90.-indgen(beginningpoints-1)*0.1
 	      endif
 	      if PV_fixed lt 0 then begin
-		yclosed(0)=-89.
-		yclosed(1:beginningpoints-1)=-89+indgen(beginningpoints-1)*0.1
+		yclosed(0)=-90.
+		yclosed(1:beginningpoints-1)=-90.+indgen(beginningpoints-1)*0.1
 	      endif
 	xclosed(beginningpoints:beginningpoints+n_elements(x)-1)=x 
         yclosed(beginningpoints:beginningpoints+n_elements(y)-1)=y
         xclosed(beginningpoints+n_elements(x):n_elements(xclosed)-2)=x(n_elements(x)-1)
-		if (PV_fixed ge 0) then $
-                yclosed(beginningpoints+n_elements(y):n_elements(yclosed)-2)=reverse(89-indgen(finalpoints+1)*0.1)
-		if (PV_fixed lt 0) then $
-                yclosed(beginningpoints+n_elements(y):n_elements(yclosed)-2)=y(n_elements(y)-1)-indgen(finalpoints+1)*0.1
+		if (PV_fixed ge 0) then yclosed(beginningpoints+n_elements(y):n_elements(yclosed)-2)=reverse(89.99-indgen(finalpoints+1)*0.1)
+		if (PV_fixed lt 0) then yclosed(beginningpoints+n_elements(y):n_elements(yclosed)-2)=y(n_elements(y)-1)-indgen(finalpoints+1)*0.1
         xclosed(n_elements(xclosed)-1)=xclosed(0) 
-		if PV_fixed ge 0 then yclosed(n_elements(yclosed)-1)=89
-		if PV_fixed lt 0 then yclosed(n_elements(yclosed)-1)=-89
+		if PV_fixed ge 0 then yclosed(n_elements(yclosed)-1)=90.
+		if PV_fixed lt 0 then yclosed(n_elements(yclosed)-1)=-90.
         add_sub,xclosed,yclosed,x,y,beginningpoints,lon1,lat1,PV_theta1,PV_fixed,partialarea
 ;----- sum of total area-----------------------------------
         totalarea=totalarea+partialarea
@@ -185,7 +180,7 @@ totalarea=0.0
       endelse
    endif
 endfor
-;---------------------------Calculate equivalent latitude-----------------------------------------------------
+;---------------------------Calculate equivalent latitude-----------------------------------------------------------------------------
    latitudecalculate=equival_latit(totalarea)
 	if PV_fixed ge 0 then begin 
            equivalat=latitudecalculate*!radeg  
@@ -197,12 +192,14 @@ no:
 if totalarea eq -9999.9 then begin
    equivalat=!values.f_nan 
 endif
+timer,/stop,/print,time
+time_a=time
 return
 end
 
-;-------------------------------------------------------------------------------------------------------------
-;This function calculated what areas are added and are subtracted.
-;-------------------------------------------------------------------------------------------------------------
+;-----------------------------------------------------------------------------------------------------------------------------------------
+;This function calculates what areas are added and/or subtracted.
+;-----------------------------------------------------------------------------------------------------------------------------------------
 pro add_sub,x1,y1,x2,y2,mas,lon_1,lat_1,PV_theta_11,PV_fix,partialarea1
     RT=6.37e3; Earth Radius (in meters)
        
@@ -212,19 +209,20 @@ pro add_sub,x1,y1,x2,y2,mas,lon_1,lat_1,PV_theta_11,PV_fix,partialarea1
        ind_lat=where(y_l ge lat_1,c_lat)
        ind_lon=where(x_l le lon_1,c_lon)
 
-      if(ind_lat(0) ne 0 and ind_lat(0) ne n_elements(lat_1)-1) then begin
-         i_lat=[ind_lat(0)+1,ind_lat(0)-1]
-      endif else begin
-         if (ind_lat(0) eq 0) then i_lat=ind_lat(0)+1
-         if (ind_lat(0) eq n_elements(lat_1)-1) then i_lat=ind_lat(0)-1
-      endelse
-      if(ind_lon(0) ne 0 and ind_lon(0) ne n_elements(lon_1)-1) then begin
-         i_lon=[ind_lon(0)+1,ind_lon(0)-1]
-      endif else begin
-         if (ind_lon(0) eq 0) then i_lon=ind_lon(0)+1
-         if (ind_lon(0) eq n_elements(lon_1)-1) then i_lon=ind_lon(0)-1
-      endelse
+if(ind_lat(0) ne 0 and ind_lat(0) ne n_elements(lat_1)-1) then begin
+  i_lat=[ind_lat(0)+1,ind_lat(0)-1]
+endif else begin
+  if (ind_lat(0) eq 0) then i_lat=ind_lat(0)+1
+  if (ind_lat(0) eq n_elements(lat_1)-1) then i_lat=ind_lat(0)-1
+endelse
+if(ind_lon(0) ne 0 and ind_lon(0) ne n_elements(lon_1)-1) then begin
+  i_lon=[ind_lon(0)+1,ind_lon(0)-1]
+endif else begin
+  if (ind_lon(0) eq 0) then i_lon=ind_lon(0)+1
+  if (ind_lon(0) eq n_elements(lon_1)-1) then i_lon=ind_lon(0)-1
+endelse
 
+ 
      pto=intarr(n_elements(i_lon),n_elements(i_lat))
      PV=fltarr(n_elements(i_lon),n_elements(i_lat))
      for ila=0,n_elements(i_lat)-1 do begin
@@ -277,9 +275,9 @@ pro add_sub,x1,y1,x2,y2,mas,lon_1,lat_1,PV_theta_11,PV_fix,partialarea1
 return
 end
 
-;-------------------------------------------------------------------------------------------------------------
-;This function calculated the equivalent latitude for total area.
-;-------------------------------------------------------------------------------------------------------------
+;-----------------------------------------------------------------------------------------------------------------------------------------
+;This function calculates the equivalent latitude for the total area.
+;-----------------------------------------------------------------------------------------------------------------------------------------
 function equival_latit,area 
   RT=6.371e3
   equivalatitude=asin(1-(area*1.0/(2*!pi*RT*RT)))
